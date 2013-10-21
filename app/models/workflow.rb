@@ -59,9 +59,6 @@ class Workflow < ActiveRecord::Base
   # a workflow can have many runs
   has_many :runs
 
-  # a workflow can have many ports
-  has_many :workflow_ports
-
   # after the workflow details have been written to the DB
   # write the workflow file to the filesystem
   after_save :store_wffile

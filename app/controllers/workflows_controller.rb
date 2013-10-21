@@ -203,6 +203,14 @@ class WorkflowsController < ApplicationController
   def destroy
     @workflow = Workflow.find(params[:id])
     @workflow.delete_files
+    # Dependency to destroy associated records in TL. will disapear if moved to
+    # XML file
+    tlp = TavernaLite::WorkflowProfile.find_by_workflow_id(@workflow)
+    tlports = TavernaLite::WorkflowPort.find_all_by_workflow_id(@workflow)
+    tlerrors = TavernaLite::WorkflowError.find_all_by_workflow_id(@workflow)
+    tlp.destroy
+    tlports.each do |pt| pt.destroy end
+    tlerrors.each do |er| er.destroy end
     @workflow.destroy
 
     respond_to do |format|

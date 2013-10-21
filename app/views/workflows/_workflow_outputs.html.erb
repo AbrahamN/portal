@@ -86,7 +86,7 @@
                :locals => {:content_label => portname, :content => item.example } %>
            </dd>
          <% end -%>
-         <% if (item.display_control_id == 1) || item.display_control_id == 3 then -%>
+         <% if item.display_control_id == 3 then -%>
            <dt class='list_title'>Example File:</dt>
            <dd class='list_description'>
           <% if item.sample_file_type.to_s =~ /text/ %>
@@ -108,8 +108,7 @@
               :locals => {:content_label => portname, :content => item.sample_file} %>
           <% end -%>
           <% unless file_uri  =~ URI::regexp %>
-               <%= button_to 'Download', :controller => 'workflow_ports',
-                     :action => 'download', :id => item.id %>
+               <%= button_to 'Download', taverna_lite.download_workflow_port_path(item.id) %>
              <% end -%>
            </dd>
          <% end -%>

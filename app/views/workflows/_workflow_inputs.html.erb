@@ -47,13 +47,10 @@
      		            height:auto !important;
                             height:300px; ">
 <% if @sources.count>0 %>
-   <h2>
-     This workflow has <%= @sources.count %>
-     <%= "Input".pluralize(@sources.count)%>
-   </h2>
    <% @custom_inputs.each do |item| %>
      <% portname = item.name %>
      <% example_value = @sources[portname].blank? ? "": @sources[portname] -%>
+     <% unless !item.show %>
      <h3> <%= label_tag portname %></h3>
      <dl class='list_any'>
        <% the_description = @source_descriptions[portname] %>
@@ -113,6 +110,7 @@
          <% end -%>
        <% end -%>
      </dl>
+     <% end # end of unless !show-%>
   <% end -%>
 <% else -%>
   <p>

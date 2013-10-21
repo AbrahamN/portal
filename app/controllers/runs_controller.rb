@@ -78,7 +78,7 @@ class RunsController < ApplicationController
       @sinks, @sink_descriptions = @workflow.get_outputs
       @run_error_codes = @run.get_error_codes
       @user_name = @run.user_id.nil? ? "Guest" : @run.user.name
-
+      # At the moment the customisation information is not used
       if @run.state == "finished"
         ports = {}
         @run.results.each do |result|

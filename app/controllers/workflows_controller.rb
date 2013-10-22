@@ -208,9 +208,9 @@ class WorkflowsController < ApplicationController
     tlp = TavernaLite::WorkflowProfile.find_by_workflow_id(@workflow)
     tlports = TavernaLite::WorkflowPort.find_all_by_workflow_id(@workflow)
     tlerrors = TavernaLite::WorkflowError.find_all_by_workflow_id(@workflow)
-    tlp.destroy
-    tlports.each do |pt| pt.destroy end
-    tlerrors.each do |er| er.destroy end
+    unless tlp.nil? then tlp.destroy end
+    unless tlports.nil? then tlports.each do |pt| pt.destroy end end
+    unless tlerrors.nil? then tlerrors.each do |er| er.destroy end end
     @workflow.destroy
 
     respond_to do |format|

@@ -35,7 +35,7 @@
 #
 # Synopsis
 #
-# BioVeL Taverna Lite  is a prototype interface to Taverna Server which is
+# BioVeL Portal is a prototype interface to Taverna Server which is
 # provided to support easy inspection and execution of workflows.
 #
 # For more details see http://www.biovel.eu
@@ -77,11 +77,11 @@
     <% @custom_inputs.each do |item| %>
       <% portname = item.name %>
       <% example_value = @sources[portname].blank? ? "": @sources[portname] -%>
-
+      <!-- If hiden then just create the hiden field tag with the
+             appropriate values-->
+      <% unless !item.show %>
       <div class="input-details">
-
-      <h2>Input: <%= portname %></h2>
-
+        <h2>Input: <%= portname %></h2>
       <% if item.id.nil? %>
         <!-- If not customised show default view -->
 
@@ -116,7 +116,6 @@
 
       <% else %>
         <!-- If customised show custom sample and/or file -->
-
         <dt>Description</dt>
         <dd>
           <%= @descriptions[portname].blank? ? "Not Provided" : @descriptions[portname] %>
@@ -166,12 +165,18 @@
               <%= f.file_field "file_for_#{portname}" %>
             </dd>
           <% end # custom file field %>
-
       <% end # item.id.nil? %>
       </div>
+      <% else %>
+            <% if  item.display_control_id == 2 %>
+              <%= f.hidden_field portname, :value => item.example %>
+            <% elsif  item.display_control_id == 2 %>
+              <%= f.hidden_field "default_file_for_#{portname}",
+                :value => item.sample_file_actual_path %>
+            <% end %>
+      <% end # hidden input field %>
     <% end # custom inputs loop %>
   <% end # sources > 0 %>
-
   <div>
     <h2>Provide input values and click to execute</h2>
     <%= submit_tag 'Start Run', :disable_with => "Starting..." %>

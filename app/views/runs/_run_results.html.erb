@@ -35,7 +35,7 @@
 #
 # Synopsis
 #
-# BioVeL Taverna Lite  is a prototype interface to Taverna Server which is
+# BioVeL Portal is a prototype interface to Taverna Server which is
 # provided to support easy inspection and execution of workflows.
 #
 # For more details see http://www.biovel.eu
@@ -49,16 +49,29 @@
   <div id="tabs_results">
     <ul>
       <% results.keys.sort.each do |name| %>
+      <% co = @custom_outputs.where(:name=> name)[0]
+        show_this_one = true
+        unless co.nil?
+         show_this_one = co.show
+        end -%>
+        <% unless !show_this_one %>
         <li>
           <a href="#search_<%= name %>">
             <%= label_tag name %>
           </a>
         </li>
+        <% end %>
       <% end %>
     </ul>
 
     <% results.values.each do |result| %>
       <% unless result.is_a? Array %>
+      <% co = @custom_outputs.where(:name=> result.name)[0]
+        show_this_one = true
+        unless co.nil?
+          show_this_one = co.show
+        end -%>
+      <% unless !show_this_one %>
         <div id="search_<%= result.name %>" class="clearfix"
         	style="min-height:300px; height:auto !important; height:300px;">
 
@@ -75,11 +88,15 @@
           <%= render :partial => "run_result",
             :locals => { :result => result } %>
         </div>
-
+      <%end #of show/hide -%>
       <% else %>
-
+        <% co = @custom_outputs.where(:name=> result[0].name)[0]
+          show_this_one = true
+          unless co.nil?
+            show_this_one = co.show
+          end -%>
+        <% unless !show_this_one %>
         <% result_group_name = result[0].name %>
-
         <div id="search_<%= result_group_name %>" class="clearfix"
       	  style="min-height:300px; height:auto !important; height:300px;">
 
@@ -103,6 +120,7 @@
             <% end %>
           </ol>
         </div>
+        <% end #of show/hide -%>
       <% end %>
     <% end %>
   </div>

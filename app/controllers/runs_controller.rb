@@ -75,6 +75,11 @@ class RunsController < ApplicationController
       @run = Run.find(params[:id])
       return login_required if current_user.nil? && !@run.user_id.nil?
       @workflow = Workflow.find(@run.workflow_id)
+      @workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(@workflow)
+      @custom_outputs = nil
+      unless @workflow_profile.nil?
+        @custom_outputs = @workflow_profile.get_custom_outputs
+      end
       @sinks, @sink_descriptions = @workflow.get_outputs
       @run_error_codes = @run.get_error_codes
       @user_name = @run.user_id.nil? ? "Guest" : @run.user.name

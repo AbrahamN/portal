@@ -126,14 +126,14 @@
       ele.style.display = "none";
       ele2.style.display = "block"
       button.innerHTML = "<img alt='Bullet_arrow_down' src='/assets/bullet_arrow_down.png' />";
-      button.title = "show all";
-      button.alt = "show all";   	}
+      button.title = "more";
+      button.alt = "more";   	}
     else {
       ele.style.display = "block";
       ele2.style.display = "none"
       button.innerHTML = "<img alt='Bullet_arrow_down' src='/assets/bullet_arrow_up.png' />";
-      button.title = "show less";
-      button.alt = "show less";
+      button.title = "less";
+      button.alt = "less";
     }
   }
 

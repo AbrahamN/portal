@@ -56,6 +56,8 @@ class Run < ActiveRecord::Base
   def validate
     validate_inputs
   end
+   # No validation is actually happening this must be implemented to prevent
+   # errors when starting a new run
   def validate_inputs
     workflow = Workflow.find(workflow_id)
   end

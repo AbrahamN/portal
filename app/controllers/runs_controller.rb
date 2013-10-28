@@ -324,10 +324,10 @@ class RunsController < ApplicationController
           end
 
           # determine if an rserver is being called
-          if @workflow.connects_to_r_server?
+          #if @workflow.connects_to_r_server?
             rs_cred = Credential.find_by_server_type_and_default_and_in_use("rserver",true,true)
             run.add_password_credential(rs_cred.url,rs_cred.login,rs_cred.password)
-          end
+          #end
           run.start()
         else
           redirect_to :back,  :flash => {:error => "Server Busy, try again later"}

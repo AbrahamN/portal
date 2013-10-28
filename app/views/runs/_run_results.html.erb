@@ -49,11 +49,13 @@
   <div id="tabs_results">
     <ul>
       <% results.keys.sort.each do |name| %>
-      <% co = @custom_outputs.where(:name=> name)[0]
-        show_this_one = true
-        unless co.nil?
-         show_this_one = co.show
-        end -%>
+      <% show_this_one = true
+         unless @custom_outputs.nil?
+           co = @custom_outputs.where(:name=> name)[0]
+           unless co.nil?
+             show_this_one = co.show
+           end
+         end -%>
         <% unless !show_this_one %>
         <li>
           <a href="#search_<%= name %>">
@@ -66,11 +68,13 @@
 
     <% results.values.each do |result| %>
       <% unless result.is_a? Array %>
-      <% co = @custom_outputs.where(:name=> result.name)[0]
-        show_this_one = true
-        unless co.nil?
-          show_this_one = co.show
-        end -%>
+      <% show_this_one = true
+         unless @custom_outputs.nil?
+           co = @custom_outputs.where(:name=> result.name)[0]
+           unless co.nil?
+             show_this_one = co.show
+           end
+         end -%>
       <% unless !show_this_one %>
         <div id="search_<%= result.name %>" class="clearfix"
         	style="min-height:300px; height:auto !important; height:300px;">
@@ -90,11 +94,13 @@
         </div>
       <%end #of show/hide -%>
       <% else %>
-        <% co = @custom_outputs.where(:name=> result[0].name)[0]
-          show_this_one = true
-          unless co.nil?
-            show_this_one = co.show
-          end -%>
+        <% show_this_one = true
+           unless @custom_outputs.nil?
+             co = @custom_outputs.where(:name=> result[0].name)[0]
+             unless co.nil?
+              show_this_one = co.show
+             end
+           end -%>
         <% unless !show_this_one %>
         <% result_group_name = result[0].name %>
         <div id="search_<%= result_group_name %>" class="clearfix"

@@ -115,7 +115,7 @@ div {
 
 /* new clearfix */
 /* from http://perishablepress.com/new-clearfix-hack/ */
-/* lonked from:
+/* linked from:
    http://stackoverflow.com/questions/6681768/how-to-not-use-div-class-clear-in-markup */
 .clearfix:after {
     visibility: hidden;

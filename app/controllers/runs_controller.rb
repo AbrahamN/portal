@@ -308,20 +308,25 @@ class RunsController < ApplicationController
               end
 
               if run.input_port(input).nil?
-                logger.info "#NEW RUN (#{Time.now}): no values assigned"
+                logger.info "#NEW RUN (#{Time.now}): no values assigned look for file"
               end
-            elsif params[:file_uploads].include? input_file
+            end
+            # When file is included as a sample or as actual input prefer over
+            # value
+            if params[:file_uploads].include? input_file
               port.file = params[:file_uploads][input_file].tempfile.path
-            elsif params[:file_uploads].include? default_input_file && default_input_file != ""
-              port.file = params[:file_uploads][default_input_file].to_s
-            else
+            elsif port.file.nil? &&
+              params[:file_uploads].include? default_input_file &&
+              default_input_file != ""
+                port.file = params[:file_uploads][default_input_file].to_s
+            end
+            if port.file.nil? && port.value.nil?
               #should never get here
-              logger.info "#NEW RUN (#{Time.now}): Input '#{input}' has not been set."
-              run.delete
-              exit 1
+              logger.info "#NEW RUN (#{Time.now}): Input: '#{input}' missing"
+              redirect_to :back,  :flash => {:error => "Input '#{input}' Missing
+                 . Please provide input and retry"}
             end
           end
-
           # determine if an rserver is being called
           #if @workflow.connects_to_r_server?
             rs_cred = Credential.find_by_server_type_and_default_and_in_use("rserver",true,true)
@@ -332,7 +337,7 @@ class RunsController < ApplicationController
           redirect_to :back,  :flash => {:error => "Server Busy, try again later"}
         end
        else
-      # missing some or all inputs
+       # missing some or all inputs
          logger.info "#NEW RUN (#{Time.now}): Cannot start run, missing inputs"
          redirect_to :back,  :flash => {:error => "Missing inputs.
            Please provide values/files for all inputs and retry"}

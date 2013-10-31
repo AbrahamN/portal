@@ -303,7 +303,7 @@ class RunsController < ApplicationController
                 stringinput.sub! ']',''
                 inputarray = stringinput.split(',').collect! {|n| n.to_s}
                 port.value = inputarray
-              else
+              elsif stringinput!=""
                 port.value = stringinput
               end
 
@@ -318,7 +318,7 @@ class RunsController < ApplicationController
 
             if params[:file_uploads].include? input_file
               port.file = params[:file_uploads][input_file].tempfile.path
-            elsif params[:file_uploads].include? default_input_file
+            elsif params[:file_uploads].include? default_input_file && default_input_file != ""
               port.file = params[:file_uploads][default_input_file].to_s
             end
           end
@@ -335,6 +335,8 @@ class RunsController < ApplicationController
        else
       # missing some or all inputs
          logger.info "#NEW RUN (#{Time.now}): Cannot start run, missing inputs"
+         redirect_to :back,  :flash => {:error => "Missing inputs.
+           Please provide values/files for all inputs and retry"}
       end
     end
 

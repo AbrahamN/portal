@@ -310,16 +310,15 @@ class RunsController < ApplicationController
               if run.input_port(input).nil?
                 logger.info "#NEW RUN (#{Time.now}): no values assigned"
               end
-            else
-              logger.info "#NEW RUN (#{Time.now}): Input '#{input}' has not been set."
-              run.delete
-              exit 1
-            end
-
-            if params[:file_uploads].include? input_file
+            elsif params[:file_uploads].include? input_file
               port.file = params[:file_uploads][input_file].tempfile.path
             elsif params[:file_uploads].include? default_input_file && default_input_file != ""
               port.file = params[:file_uploads][default_input_file].to_s
+            else
+              #should never get here
+              logger.info "#NEW RUN (#{Time.now}): Input '#{input}' has not been set."
+              run.delete
+              exit 1
             end
           end
 

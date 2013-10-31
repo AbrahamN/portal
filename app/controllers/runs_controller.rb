@@ -314,8 +314,9 @@ class RunsController < ApplicationController
             # When file is included as a sample or as actual input prefer over
             # value
             if params[:file_uploads].include? input_file
+              port.value = nil
               port.file = params[:file_uploads][input_file].tempfile.path
-            elsif port.file.nil? &&
+            elsif port.value.nil? &&
               params[:file_uploads].include?(default_input_file) &&
               default_input_file != ""
                 port.file = params[:file_uploads][default_input_file].to_s

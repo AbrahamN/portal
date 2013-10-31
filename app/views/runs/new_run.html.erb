@@ -144,17 +144,18 @@
 
           <% if (item.display_control_id == 1) || item.display_control_id == 3 %>
             <!-- get input from file field -->
-
-            <dt>Example File (<%=item.sample_file%>) content</dt>
             <% if item.sample_file_type.to_s =~ /text/
                example_file_text = IO.read(item.sample_file_actual_path)
              else
                example_file_text = item.sample_file.to_s() + ' (' + item.sample_file_type.to_s()  + ')'
              end %>
+            <% unless example_file_text == "" || example_file_text =" ()"%>
+            <dt>Example File (<%=item.sample_file%>) content</dt>
             <dd>
               <%= render :partial => 'partials/preview_and_detail',
                 :locals => {:content_label => portname, :content => example_file_text } %>
             </dd>
+            <% end -%>
             <dt>Select File</dt>
             <dd>
               <%= f.file_field "file_for_#{portname}" %>

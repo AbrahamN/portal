@@ -316,7 +316,7 @@ class RunsController < ApplicationController
             if params[:file_uploads].include? input_file
               port.file = params[:file_uploads][input_file].tempfile.path
             elsif port.file.nil? &&
-              params[:file_uploads].include? default_input_file &&
+              params[:file_uploads].include?(default_input_file) &&
               default_input_file != ""
                 port.file = params[:file_uploads][default_input_file].to_s
             end

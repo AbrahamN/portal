@@ -1,3 +1,4 @@
+<%
 # Copyright (c) 2012-2013 Cardiff University, UK.
 # Copyright (c) 2012-2013 The University of Manchester, UK.
 #
@@ -41,12 +42,7 @@
 #
 # BioVeL is funded by the European Commission 7th Framework Programme (FP7),
 # through the grant agreement number 283359.
-
-# ENGINE CONFIGURATION FILE ****************************************************
-# Need to tell the engine the names of the classes that will be used for
-# handling users, workflows, runs and results in the main application
-TavernaLite.author_class = "User"
-TavernaLite.workflow_class = "Workflow"
-TavernaLite.run_class = "Run"
-TavernaLite.result_class = "Result"
-TavernaLite.consumer_token_class = "ConsumerToken"
+%>
+<div id="search_components" style="height:400px;overflow:auto;">
+  <%= render :partial => 'add_workflow_components_search' %>
+</div>

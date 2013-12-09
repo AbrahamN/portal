@@ -37,8 +37,8 @@
 #
 # Synopsis
 #
-# BioVeL Portal is a prototype interface to Taverna Server which is
-# provided to support easy inspection and execution of workflows.
+# BioVeL Portal is a prototype interface to Taverna Server provided to support
+# easy inspection and execution of workflows.
 #
 # For more details see http://www.biovel.eu
 #
@@ -98,17 +98,24 @@ class WorkflowsController < ApplicationController
   def new
     search_by =""
     if !params[:search].nil?
+      # strip removes leading and trailing spaces from string
       search_by = params[:search].strip
     end
     @workflow = Workflow.new
     @me_workflows = []
+    @families =[]
     @consumer_tokens=getConsumerTokens
     @services=OAUTH_CREDENTIALS.keys-@consumer_tokens.collect{|c| c.class.service_name}
+
     if (!search_by.nil? && search_by!="")
      if @consumer_tokens.count > 0
        # search for my experiment workflows
        @workflows = getmyExperimentWorkflows(@me_workflows, URI::encode(search_by))
      end
+   end
+   if @consumer_tokens.count > 0
+     # search for my experiment workflows
+     @families = getComponentFamilies()
    end
    respond_to do |format|
       format.html # new.html.erb
@@ -132,8 +139,6 @@ class WorkflowsController < ApplicationController
   end
   def create_from_upload(params)
     @workflow = Workflow.new(params[:workflow])
-    @consumer_tokens=getConsumerTokens
-    @services=OAUTH_CREDENTIALS.keys-@consumer_tokens.collect{|c| c.class.service_name}
     respond_to do |format|
       @workflow.get_details_from_model
       @workflow.user_id = current_user.id
@@ -263,8 +268,7 @@ class WorkflowsController < ApplicationController
   end
 
   def getConsumerTokens
-    MyExperimentToken.all :conditions=>
-      {:user_id=>current_user.id}
+    MyExperimentToken.all :conditions=> {:user_id=>current_user.id}
   end
 
   def getmyExperimentWorkflows(workflows=[], search_by="")
@@ -308,6 +312,7 @@ class WorkflowsController < ApplicationController
     end
     return workflows
   end
+
   def get_my_exp_workflow(workflow)
     consumer_tokens=getConsumerTokens
     if consumer_tokens.count > 0
@@ -347,6 +352,7 @@ class WorkflowsController < ApplicationController
     end
     return content_uri
   end
+  # do not include workflows that cannot be downloaded in the results
   def get_workflow_permissions(workflow)
     consumer_tokens = getConsumerTokens
     elements = []
@@ -367,5 +373,138 @@ class WorkflowsController < ApplicationController
       end
     end
     return elements
+  end  #search for component families in the registry
+
+  ##############################################################################
+  # Code for adding and managing workflow component families
+  # Need to be moved to Taverna Lite, it is here only temporarily because this
+  # app already has connectivity to my experiment
+  ##############################################################################
+  class ComponentFamily
+  # A model for workflow component families
+    attr_accessor :id, :my_exp_id, :name, :pack_id, :uri, :content_uri, :title,
+      :description, :type, :can_download, :registry, :components, :used,
+      :needs_update
+    def initialize(attributes = {})
+      attributes.each do |name, value|
+        send("#{name}=", value)
+      end
+    end
+    def self.all
+      families = []
+    end
+  end
+  def getComponentFamilies(families=[])
+    consumer_tokens = getConsumerTokens
+    if consumer_tokens.count > 0
+      token = consumer_tokens.first.client
+      # apparently componets are not paginated but left comments in ocde in case
+      # later they are
+      families_uri = "http://www.myexperiment.org/component-families.xml"#?page="
+      # Get the workflows using the request token
+      no_families = false
+      #page = 1
+      #begin
+        response=token.request(:get, families_uri)#+ page.to_s)
+        doc = REXML::Document.new(response.body)
+        puts doc.root.elements.count
+        if doc.elements['component-families/pack'].nil? ||
+           doc.elements['component-families/pack'].has_elements?
+          no_families = true
+        else
+          doc.elements.each('component-families/pack') do |p|
+            p.attributes.each do |attrbt|
+              if(attrbt[0]=='resource')
+                nw_family=ComponentFamily.new
+                nw_family.my_exp_id = attrbt[1].to_s.split('/').last
+                if get_family_permissions(nw_family).include?("download")
+                  nw_family.name = p.text
+                  nw_family.id = nw_family.my_exp_id
+                  nw_family.uri = attrbt[1]
+                  nw_family = get_family(nw_family)
+                  # for now this is the only registry
+                  nw_family.registry = "http://www.myexperiment.org"
+                  unless nw_family.components == {}
+                    families << nw_family
+                  end
+                end
+              end
+            end
+          end
+          #page +=1
+        end
+      #end while no_families == false
+    end
+    return families
+  end
+
+  def get_family_permissions(family)
+    consumer_tokens = getConsumerTokens
+    elements = []
+    if consumer_tokens.count > 0
+      token = consumer_tokens.first.client
+      # URI for the workflow
+      family_uri =  "http://www.myexperiment.org/component-family.xml?id="
+      family_uri += family.my_exp_id.to_s
+      family_uri += '&elements=privileges'
+      response=token.request(:get, family_uri)
+      doc = REXML::Document.new(response.body)
+      doc.elements.each('pack/privileges/privilege') do |u|
+        u.attributes.each do |attrbt|
+          if(attrbt[0]=='type')
+            elements << attrbt[1]
+          end
+        end
+      end
+    end
+    return elements
+  end
+  def get_family(family)
+    consumer_tokens=getConsumerTokens
+    if consumer_tokens.count > 0
+      token = consumer_tokens.first.client
+      # URI for the packs, will return all the packs for selected page
+      # PROBLEM: how do we know how many pages are there?
+      family_uri = "http://www.myexperiment.org/component-family.xml?id=" +
+                  family.id.to_s
+      # Get the workflow using the request token
+      response=token.request(:get, family_uri)
+      doc = REXML::Document.new(response.body)
+      family.name = doc.elements['pack/title'].text
+      family.description = doc.elements['pack/description'].text
+      # get permisions
+      permissions = get_family_permissions(family)
+      family.can_download = permissions.include?("download")
+      family.needs_update = family_needs_updating(family)
+      family.components = get_family_components(doc, family, token)
+      comps=TavernaLite::WorkflowComponent.find_by_family(family.name)
+      family.used=!comps.nil?
+    end
+    return family
+  end
+  def get_family_components(doc, family, token)
+    components = {}
+    #puts "===================================================================="
+    #puts "FAMILY: " + family.name
+    if !doc.elements["pack/internal-pack-items/workflow"].nil?
+      doc.elements.each("pack/internal-pack-items/workflow") { |wf|
+        #puts wf.text + " " + wf.attributes["resource"].to_s.split('/').last
+        wf_id = wf.attributes["resource"].to_s.split('/').last
+        workflow_uri =  "http://www.myexperiment.org/workflow.xml?id="
+        workflow_uri += wf_id
+        response=token.request(:get, workflow_uri)
+        wfdoc = REXML::Document.new(response.body)
+        #puts wfdoc.root.attributes["version"]
+        components[wf.text] = wfdoc.root.attributes["version"]
+      }
+    end
+    #puts "===================================================================="
+    return components
+  end
+  def family_needs_updating(family)
+    # for now just check if family is registered in TL
+    # for each component in the family:
+    # check all components exist and that their versions are the latest version
+    return true
   end
 end

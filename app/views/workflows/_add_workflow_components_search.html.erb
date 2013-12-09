@@ -1,3 +1,4 @@
+<%
 # Copyright (c) 2012-2013 Cardiff University, UK.
 # Copyright (c) 2012-2013 The University of Manchester, UK.
 #
@@ -41,12 +42,52 @@
 #
 # BioVeL is funded by the European Commission 7th Framework Programme (FP7),
 # through the grant agreement number 283359.
-
-# ENGINE CONFIGURATION FILE ****************************************************
-# Need to tell the engine the names of the classes that will be used for
-# handling users, workflows, runs and results in the main application
-TavernaLite.author_class = "User"
-TavernaLite.workflow_class = "Workflow"
-TavernaLite.run_class = "Run"
-TavernaLite.result_class = "Result"
-TavernaLite.consumer_token_class = "ConsumerToken"
+%>
+<%= render :partial => 'oauth_consumers/connection' %>
+<% unless @consumer_tokens.empty? %>
+<div id="search_components_form">
+<table id="families_table">
+  <thead>
+    <tr>
+      <th>Family</th>
+      <th>Description</th>
+      <th>Registry</th>
+      <th>Operations</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% @families.each do |family| %>
+    <tr>
+      <td>
+        <%= family.name %></dd>
+      </td>
+      <td>
+        <%=h sanitize(family.description) %></dd>
+      </td>
+      <td>
+        <%= family.registry %>
+        <% family.components.each do |comp_name, comp_version| -%>
+          </br> <%=comp_name -%> (V <%=comp_version -%>)
+        <% end -%>
+      </td>
+      <td>
+        <%if family.used && family.needs_update %>
+        <div title="Update Family" alt="Update Family" style="float:left">
+          <%= link_to 'Update', {:controller => 'runs' ,
+            :action => 'new_run', :id => family.id}, :class => "link_img" %>
+        </div>
+        <%elsif !family.used %>
+        <div title="Download Family" alt="Download Family" style="float:left">
+          <%= link_to 'Download', {:controller => 'workflows' ,
+              :action => 'download', :id => family.id}, :class => "link_img" %>
+        </div>
+        <% else %>
+          Family up to date
+        <% end %>
+      </td>
+    </tr>
+  <% end -%>
+  </tbody>
+</table>
+</div>
+<%end%>

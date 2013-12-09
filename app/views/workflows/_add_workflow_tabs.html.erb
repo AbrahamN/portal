@@ -35,8 +35,8 @@
 #
 # Synopsis
 #
-# BioVeL Taverna Lite  is a prototype interface to Taverna Server which is
-# provided to support easy inspection and execution of workflows.
+# BioVeL Portal is a prototype interface to Taverna Server provided to support
+# easy inspection and execution of workflows.
 #
 # For more details see http://www.biovel.eu
 #
@@ -47,7 +47,9 @@
   <ul>
     <li><a href="#search_myexp">search in my experiment</a></li>
     <li><a href="#search_local">search locally</a></li>
+    <li><a href="#search_components">workflow components</a></li>
   </ul>
   <%= render :partial => 'add_workflow_myexperiment', :locals => {:workflow => @workflow} %>
   <%= render :partial => 'add_workflow_local', :locals => {:workflow => @workflow} %>
+  <%= render :partial => 'add_workflow_components', :locals => {:workflow => @workflow} %>
 </div>

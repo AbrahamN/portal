@@ -56,6 +56,8 @@ Portal::Application.routes.draw do
       post "save_custom_inputs"
       post "save_custom_outputs"
       post "save_custom_errors"
+      post "get_family"
+      post "update_family"
     end
   end
   #*****************************************************

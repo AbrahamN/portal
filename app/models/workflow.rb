@@ -140,6 +140,7 @@ class Workflow < ActiveRecord::Base
       nil
     end
   end
+
   def get_details_from_model(authorname="Undefined")
     file_OK = false
     if @file_data
@@ -169,6 +170,7 @@ class Workflow < ActiveRecord::Base
       end
     end
   end
+
   def connects_to_r_server?
     response = false
     for df in self.get_model.dataflows do

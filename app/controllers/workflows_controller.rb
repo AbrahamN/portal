@@ -105,19 +105,17 @@ class WorkflowsController < ApplicationController
     @me_workflows = []
     @families =[]
     @consumer_tokens=getConsumerTokens
-    @services=OAUTH_CREDENTIALS.keys-@consumer_tokens.collect{|c| c.class.service_name}
-
     if (!search_by.nil? && search_by!="")
-     if @consumer_tokens.count > 0
-       # search for my experiment workflows
-       @workflows = getmyExperimentWorkflows(@me_workflows, URI::encode(search_by))
-     end
-   end
-   if @consumer_tokens.count > 0
-     # search for my experiment workflows
-     @families = getComponentFamilies()
-   end
-   respond_to do |format|
+      if @consumer_tokens.count > 0
+        # search for my experiment workflows
+        @workflows = getmyExperimentWorkflows(@me_workflows, URI::encode(search_by))
+      end
+    end
+    if @consumer_tokens.count > 0
+      # search for my experiment workflows
+      @families = getComponentFamilies()
+    end
+    respond_to do |format|
       format.html # new.html.erb
       format.json { render :json => @workflow }
     end
@@ -159,7 +157,6 @@ class WorkflowsController < ApplicationController
     wf_name = wf_name.downcase.gsub(" ","_").gsub(".", "") + '.t2flow'
     link_uri = params[:workflow_link]
     @consumer_tokens=getConsumerTokens
-    @services=OAUTH_CREDENTIALS.keys-@consumer_tokens.collect{|c| c.class.service_name}
     # get the workflow using token
     if @consumer_tokens.count > 0
       token = @consumer_tokens.first.client
@@ -245,11 +242,111 @@ class WorkflowsController < ApplicationController
     redirect_to :back
   end
 
+  def get_family
+    nw_family=ComponentFamily.new
+    nw_family.id =  params[:id]
+    nw_family.name =  params[:name]
+    nw_family = get_family_details(nw_family)
+    nw_family.components.each {|k,v|
+      # get each workflow
+      params={:workflow_name=> k,:workflow_uri=>v[3], :workflow_link=>v[2]}
+      workflow = download_comp_wfs(params)
+      if !workflow.nil?
+        # create workflow for each  component
+        wfc = TavernaLite::WorkflowComponent.new()
+        wfc.workflow_id=workflow.id
+        wfc.license_id=1
+        wfc.version= v[0]
+        wfc.family=nw_family.name
+        wfc.name=k
+        wfc.registry=nw_family.registry
+        wfc.save
+      end
+    }
+    redirect_to :back
+  end
+
+  def update_family
+    nw_family=ComponentFamily.new
+    nw_family.id =  params[:id]
+    nw_family.name =  params[:name]
+    nw_family = get_family_details(nw_family)
+    nw_family.components.each {|k,v|
+      # get each workflow
+      params={:workflow_name=> k,:workflow_uri=>v[3], :workflow_link=>v[2]}
+      workflow = download_comp_wfs(params)
+      if !workflow.nil?
+        # if component in right version exists do nothing
+        reg_comp = TavernaLite::WorkflowComponent.all(:conditions=>
+          ['name = ? AND version = ? AND family = ?', k, v[0], nw_family.name])[0]
+        if reg_comp.nil?
+          # if outdated version of component exists
+
+          outdated_comp = TavernaLite::WorkflowComponent.all(:conditions=>
+            ['name = ? AND  family = ?', k, nw_family.name])[0]
+          #register the most recent version
+          # create workflow for each  component
+          wfc = TavernaLite::WorkflowComponent.new()
+          wfc.workflow_id=workflow.id
+          wfc.license_id=1
+          wfc.version= v[0]
+          wfc.family=nw_family.name
+          wfc.name=k
+          wfc.registry=nw_family.registry
+          wfc.save
+          # if outdated version of component exists
+          if !outdated_comp.nil?
+            ac=TavernaLite::AlternativeComponent.new
+            ac2=TavernaLite::AlternativeComponent.new
+            ac.component_id=outdated_comp.id
+            ac.alternative_id=wfc.id
+            ac.note="new versions are by default considered as equivalent"
+            ac2.component_id=wfc.id
+            ac2.alternative_id=outdated_comp.id
+            ac2.note="new versions are by default considered as equivalent"
+            ac.save
+            ac2.save
+          end
+        end
+      end
+    }
+    redirect_to :back
+  end
+
+  def download_comp_wfs(params)
+    workflow = Workflow.new()
+    content_uri = params[:workflow_uri]
+    wf_name = params[:workflow_name]
+    wf_name = wf_name.downcase.gsub(" ","_").gsub(".", "") + '.t2flow'
+    link_uri = params[:workflow_link]
+
+    @consumer_tokens=getConsumerTokens
+    # get the workflow using token
+    if @consumer_tokens.count > 0
+      token = @consumer_tokens.first.client
+      doc = REXML::Document.new(response.body)
+      response=token.request(:get, content_uri)
+      directory = "/tmp"
+      File.open(File.join(directory, wf_name), 'wb') do |f|
+        f.puts response.body
+      end
+    end
+    workflow.me_file = File.open(File.join(directory, wf_name), 'r')
+    workflow.workflow_file = wf_name
+    workflow.my_experiment_id = link_uri
+    workflow.get_details_from_model
+    workflow.user_id = current_user.id
+    if workflow.save
+      return workflow
+    else
+      return nil
+    end
+  end
+
   private
 
   def get_workflows
     @shared_workflows = Workflow.find_all_by_shared(true)
-
     if !current_user.nil?
       @workflows = Workflow.all
       if !current_user.admin
@@ -298,7 +395,7 @@ class WorkflowsController < ApplicationController
                   nw_workflow.name = p.text
                   nw_workflow.id = nw_workflow.my_exp_id
                   nw_workflow.uri = attrbt[1]
-                  nw_workflow = get_my_exp_workflow(nw_workflow)
+                  nw_workflow = download_my_exp_workflow(nw_workflow)
                   if nw_workflow.type == "Taverna 2"
                     workflows << nw_workflow
                   end
@@ -313,7 +410,7 @@ class WorkflowsController < ApplicationController
     return workflows
   end
 
-  def get_my_exp_workflow(workflow)
+  def download_my_exp_workflow(workflow)
     consumer_tokens=getConsumerTokens
     if consumer_tokens.count > 0
       token = consumer_tokens.first.client
@@ -394,6 +491,7 @@ class WorkflowsController < ApplicationController
       families = []
     end
   end
+
   def getComponentFamilies(families=[])
     consumer_tokens = getConsumerTokens
     if consumer_tokens.count > 0
@@ -421,7 +519,7 @@ class WorkflowsController < ApplicationController
                   nw_family.name = p.text
                   nw_family.id = nw_family.my_exp_id
                   nw_family.uri = attrbt[1]
-                  nw_family = get_family(nw_family)
+                  nw_family = get_family_details(nw_family)
                   # for now this is the only registry
                   nw_family.registry = "http://www.myexperiment.org"
                   unless nw_family.components == {}
@@ -459,7 +557,8 @@ class WorkflowsController < ApplicationController
     end
     return elements
   end
-  def get_family(family)
+
+  def get_family_details(family)
     consumer_tokens=getConsumerTokens
     if consumer_tokens.count > 0
       token = consumer_tokens.first.client
@@ -475,17 +574,16 @@ class WorkflowsController < ApplicationController
       # get permisions
       permissions = get_family_permissions(family)
       family.can_download = permissions.include?("download")
-      family.needs_update = family_needs_updating(family)
-      family.components = get_family_components(doc, family, token)
+      family.components = list_family_components(doc, family, token)
       comps=TavernaLite::WorkflowComponent.find_by_family(family.name)
       family.used=!comps.nil?
+      family.needs_update = family_needs_updating(family)
+      family.registry="http://www.myexperiment.org"
     end
     return family
   end
-  def get_family_components(doc, family, token)
+  def list_family_components(doc, family, token)
     components = {}
-    #puts "===================================================================="
-    #puts "FAMILY: " + family.name
     if !doc.elements["pack/internal-pack-items/workflow"].nil?
       doc.elements.each("pack/internal-pack-items/workflow") { |wf|
         #puts wf.text + " " + wf.attributes["resource"].to_s.split('/').last
@@ -495,16 +593,38 @@ class WorkflowsController < ApplicationController
         response=token.request(:get, workflow_uri)
         wfdoc = REXML::Document.new(response.body)
         #puts wfdoc.root.attributes["version"]
-        components[wf.text] = wfdoc.root.attributes["version"]
+        # non authorised gives blanks do not add
+        unless wfdoc.root.name == 'error'
+          components[wf.text] = [wfdoc.root.attributes["version"],
+                                 wfdoc.root.attributes["id"],
+                                 wfdoc.root.attributes["resource"],
+                                 wfdoc.root.elements["content-uri"].text]
+        end
       }
     end
-    #puts "===================================================================="
     return components
   end
   def family_needs_updating(family)
     # for now just check if family is registered in TL
     # for each component in the family:
     # check all components exist and that their versions are the latest version
-    return true
+    comps=TavernaLite::WorkflowComponent.find_all_by_family(family.name)
+    if !comps.nil? && comps.count > 0
+      puts family.components.count
+#      # first check if the number of components is ok
+#      if family.components.count!=comps.count
+#        return true # needs updating
+#      end
+      # now check if the versions are up to date
+      family.components.each { |c_name, c_ver|
+        c=TavernaLite::WorkflowComponent.find_by_name_and_version(c_name, c_ver)
+        if c.nil?
+          return true # a component is missing needs updating
+        end
+      }
+    end
+    return false
   end
+
+
 end

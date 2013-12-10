@@ -67,19 +67,21 @@
       <td>
         <%= family.registry %>
         <% family.components.each do |comp_name, comp_version| -%>
-          </br> <%=comp_name -%> (V <%=comp_version -%>)
+          </br> <%=comp_name -%> (V <%=comp_version[0] -%>)
         <% end -%>
       </td>
       <td>
         <%if family.used && family.needs_update %>
         <div title="Update Family" alt="Update Family" style="float:left">
-          <%= link_to 'Update', {:controller => 'runs' ,
-            :action => 'new_run', :id => family.id}, :class => "link_img" %>
+          <%= link_to 'Update', {:controller => 'workflows',
+            :action => 'update_family', :id => family.id, :name=>family.name},
+            :method=>:post, :class => "link_img" %>
         </div>
         <%elsif !family.used %>
         <div title="Download Family" alt="Download Family" style="float:left">
           <%= link_to 'Download', {:controller => 'workflows' ,
-              :action => 'download', :id => family.id}, :class => "link_img" %>
+              :action => 'get_family', :id => family.id, :name=>family.name},
+            :method=>:post, :class => "link_img" %>
         </div>
         <% else %>
           Family up to date

@@ -105,6 +105,7 @@ class WorkflowsController < ApplicationController
     @me_workflows = []
     @families =[]
     @consumer_tokens=getConsumerTokens
+    @services=OAUTH_CREDENTIALS.keys-@consumer_tokens.collect{|c| c.class.service_name}
     if (!search_by.nil? && search_by!="")
       if @consumer_tokens.count > 0
         # search for my experiment workflows

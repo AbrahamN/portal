@@ -47,9 +47,13 @@
   <ul>
     <li><a href="#search_myexp">search in my experiment</a></li>
     <li><a href="#search_local">search locally</a></li>
-    <li><a href="#search_components">workflow components</a></li>
+    <% if current_user.admin -%>
+      <li><a href="#search_components">workflow components</a></li>
+    <% end -%>
   </ul>
   <%= render :partial => 'add_workflow_myexperiment', :locals => {:workflow => @workflow} %>
   <%= render :partial => 'add_workflow_local', :locals => {:workflow => @workflow} %>
-  <%= render :partial => 'add_workflow_components', :locals => {:workflow => @workflow} %>
+  <% if current_user.admin -%>
+    <%= render :partial => 'add_workflow_components', :locals => {:workflow => @workflow} %>
+  <% end -%>
 </div>

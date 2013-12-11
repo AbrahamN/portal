@@ -111,7 +111,7 @@ class WorkflowsController < ApplicationController
         @workflows = getmyExperimentWorkflows(@me_workflows, URI::encode(search_by))
       end
     end
-    if @consumer_tokens.count > 0
+    if @consumer_tokens.count > 0 && current_user.admin
       # search for my experiment workflows
       @families = getComponentFamilies()
     end

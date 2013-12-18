@@ -263,6 +263,31 @@ class WorkflowsController < ApplicationController
         wfc.registry=nw_family.registry
         wfc.save
       end
+      workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(workflow)
+      if workflow_profile.nil?
+        workflow_profile = TavernaLite::WorkflowProfile.new()
+        workflow_profile.workflow = workflow
+        # update workflow profile details and add all workflow ports (I/O)
+        workflow_profile.description = workflow.description
+        workflow_profile.license_id = 1 # default 1
+        workflow_profile.title = workflow.title
+        workflow_profile.version = v[0]
+        workflow_profile.save
+      end
+      # first get workflow ports
+      wf_reader = TavernaLite::T2flowGetters.new
+      ports_list = wf_reader.get_workflow_ports(workflow.workflow_filename)
+      # update or save ports as needed
+      ports_list.each { |port_k, port_v|
+        workflow_port = TavernaLite::WorkflowPort.find_by_workflow_id_and_name_and_port_type_id(workflow.id,port_k,port_v.port_type_id)
+        if workflow_port.nil?
+          port_v.workflow_id = workflow.id
+          port_v.save
+        else
+          workflow_port.depth = port_v.depth
+          workflow_port.granular_depth = port_v.depth
+        end
+     }
     }
     redirect_to :back
   end
@@ -309,6 +334,32 @@ class WorkflowsController < ApplicationController
             ac2.save
           end
         end
+        workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(workflow)
+        if workflow_profile.nil?
+          workflow_profile = TavernaLite::WorkflowProfile.new()
+          workflow_profile.workflow = workflow
+          # update workflow profile details and add all workflow ports (I/O)
+          workflow_profile.description = workflow.description
+          workflow_profile.license_id = 1 # default 1
+          workflow_profile.title = workflow.title
+          workflow_profile.version = v[0]
+          workflow_profile.save
+        end
+        # first get workflow ports
+        wf_reader = TavernaLite::T2flowGetters.new
+        ports_list = wf_reader.get_workflow_ports(workflow.workflow_filename)
+        # update or save ports as needed
+        ports_list.each { |port_k, port_v|
+          workflow_port = TavernaLite::WorkflowPort.find_by_workflow_id_and_name_and_port_type_id(workflow.id,port_k,port_v.port_type_id)
+          if workflow_port.nil?
+            port_v.workflow_id = workflow.id
+            port_v.save
+          else
+            workflow_port.depth = port_v.depth
+            workflow_port.granular_depth = port_v.depth
+            workflow_port.save
+          end
+        }
       end
     }
     redirect_to :back

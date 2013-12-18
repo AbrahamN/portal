@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20131015133058) do
+ActiveRecord::Schema.define(:version => 20131218152050) do
 
   create_table "announcements", :force => true do |t|
     t.text     "message"
@@ -96,6 +96,56 @@ ActiveRecord::Schema.define(:version => 20131015133058) do
     t.datetime "updated_at",     :null => false
   end
 
+  create_table "taverna_lite_feature_constraints", :force => true do |t|
+    t.string   "cnf_clause"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "taverna_lite_feature_model_metadata", :force => true do |t|
+    t.integer  "feature_model_id"
+    t.string   "description"
+    t.string   "creator"
+    t.string   "email"
+    t.string   "date"
+    t.string   "department"
+    t.string   "organisation"
+    t.string   "address"
+    t.string   "phone"
+    t.string   "website"
+    t.string   "reference"
+    t.datetime "created_at",       :null => false
+    t.datetime "updated_at",       :null => false
+  end
+
+  create_table "taverna_lite_feature_models", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "taverna_lite_feature_trees", :force => true do |t|
+    t.integer  "feature_model_id"
+    t.integer  "parent_node_id"
+    t.string   "name"
+    t.integer  "feature_type_id"
+    t.integer  "cardinality_lower_bound"
+    t.integer  "cardinality_upper_bound"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+  end
+
+  create_table "taverna_lite_fm_feature_trees", :force => true do |t|
+    t.integer  "feature_model_id"
+    t.integer  "parent_node_id"
+    t.string   "name"
+    t.integer  "feature_type_id"
+    t.integer  "cardinality_lower_bound"
+    t.integer  "cardinality_upper_bound"
+    t.datetime "created_at",              :null => false
+    t.datetime "updated_at",              :null => false
+  end
+
   create_table "taverna_lite_port_types", :force => true do |t|
     t.string   "name"
     t.datetime "created_at", :null => false
@@ -133,8 +183,8 @@ ActiveRecord::Schema.define(:version => 20131015133058) do
     t.text     "description"
     t.text     "old_description"
     t.integer  "order"
-    t.datetime "created_at",         :null => false
-    t.datetime "updated_at",         :null => false
+    t.datetime "created_at",                        :null => false
+    t.datetime "updated_at",                        :null => false
     t.integer  "display_control_id"
     t.string   "example"
     t.string   "sample_file"
@@ -142,6 +192,8 @@ ActiveRecord::Schema.define(:version => 20131015133058) do
     t.boolean  "show"
     t.text     "old_example"
     t.integer  "example_type_id"
+    t.integer  "depth",              :default => 0
+    t.integer  "granular_depth",     :default => 0
   end
 
   create_table "taverna_lite_workflow_profiles", :force => true do |t|

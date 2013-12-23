@@ -299,15 +299,20 @@ class WorkflowsController < ApplicationController
     nw_family = get_family_details(nw_family)
     nw_family.components.each {|k,v|
       # get each workflow
-      params={:workflow_name=> k,:workflow_uri=>v[3], :workflow_link=>v[2]}
+      #v[0] = version, if >1 then call this for each
+      count_down = v[0].to_i
+      begin
+      # if component in right version exists do nothing
+      reg_comp = TavernaLite::WorkflowComponent.all(:conditions=>
+        ['name = ? AND version = ? AND family = ?', k, count_down, nw_family.name])[0]
+      logger.info "Adding Component: #{k} version: #{count_down} results @ #{Time.now}.\n"
+      if reg_comp.nil?
+      params={:workflow_name=> k, :workflow_uri=>v[3]+"?version=#{count_down}",
+        :workflow_link=>v[2], :wf_id=>v[1], :wf_version=> count_down}
+
       workflow = download_comp_wfs(params)
       if !workflow.nil?
-        # if component in right version exists do nothing
-        reg_comp = TavernaLite::WorkflowComponent.all(:conditions=>
-          ['name = ? AND version = ? AND family = ?', k, v[0], nw_family.name])[0]
-        if reg_comp.nil?
           # if outdated version of component exists
-
           outdated_comp = TavernaLite::WorkflowComponent.all(:conditions=>
             ['name = ? AND  family = ?', k, nw_family.name])[0]
           #register the most recent version
@@ -315,7 +320,7 @@ class WorkflowsController < ApplicationController
           wfc = TavernaLite::WorkflowComponent.new()
           wfc.workflow_id=workflow.id
           wfc.license_id=1
-          wfc.version= v[0]
+          wfc.version= count_down
           wfc.family=nw_family.name
           wfc.name=k
           wfc.registry=nw_family.registry
@@ -333,7 +338,6 @@ class WorkflowsController < ApplicationController
             ac.save
             ac2.save
           end
-        end
         workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(workflow)
         if workflow_profile.nil?
           workflow_profile = TavernaLite::WorkflowProfile.new()
@@ -360,7 +364,10 @@ class WorkflowsController < ApplicationController
             workflow_port.save
           end
         }
+        end
       end
+      count_down -= 1
+      end while count_down>1
     }
     redirect_to :back
   end
@@ -368,9 +375,16 @@ class WorkflowsController < ApplicationController
   def download_comp_wfs(params)
     workflow = Workflow.new()
     content_uri = params[:workflow_uri]
+    wf_version = params[:wf_version]
+    wf_id = params[:wf_id]
     wf_name = params[:workflow_name]
     wf_name = wf_name.downcase.gsub(" ","_").gsub(".", "") + '.t2flow'
     link_uri = params[:workflow_link]
+    # http://www.myexperiment.org/workflows/3640/versions/1/
+#    logger.info "http://www.myexperiment.org/workflows/#{wf_id}/versions/#{wf_version}"
+#    content_uri = "http://www.myexperiment.org/workflows/#{wf_id}/versions/#{wf_version}"
+# Problem when getting older versions of components as they are not always
+# retrievable using the same methods as the most recent workflow
 
     @consumer_tokens=getConsumerTokens
     # get the workflow using token
@@ -378,6 +392,15 @@ class WorkflowsController < ApplicationController
       token = @consumer_tokens.first.client
       doc = REXML::Document.new(response.body)
       response=token.request(:get, content_uri)
+      if response.body.nil?
+        logger.info "body for workflow #{wf_id} versions #{wf_version} is nil"
+        return nil
+      end
+      if response.body==""
+        logger.info "body for workflow #{wf_id} versions #{wf_version} is empty
+          string"
+        return nil
+      end
       directory = "/tmp"
       File.open(File.join(directory, wf_name), 'wb') do |f|
         f.puts response.body
@@ -662,7 +685,14 @@ class WorkflowsController < ApplicationController
     # check all components exist and that their versions are the latest version
     comps=TavernaLite::WorkflowComponent.find_all_by_family(family.name)
     if !comps.nil? && comps.count > 0
-      puts family.components.count
+      # check that all versions are registered locally...
+      versions = 0
+      family.components.each {|k,v|
+        versions += v[0].to_i
+      }
+      if versions != comps.count
+        return true # There are version which have not been registered locally
+      end
 #      # first check if the number of components is ok
 #      if family.components.count!=comps.count
 #        return true # needs updating

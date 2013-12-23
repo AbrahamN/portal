@@ -78,7 +78,9 @@ class Workflow < ActiveRecord::Base
   def validate_file_is_t2flow
     if !@file_data.nil? && !get_details_from_model
       errors.add :workflow_file,
-                 " \"" + @file_data.original_filename +
+                 " \"" + @file_data.to_s +
+                 "\" is not a valid taverna workflow file (t2flow)"
+      logger.error " \"" + @file_data.to_s +
                  "\" is not a valid taverna workflow file (t2flow)"
     end
   end

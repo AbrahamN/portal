@@ -326,18 +326,18 @@ class WorkflowsController < ApplicationController
           wfc.registry=nw_family.registry
           wfc.save
           # if outdated version of component exists
-          if !outdated_comp.nil?
-            ac=TavernaLite::AlternativeComponent.new
-            ac2=TavernaLite::AlternativeComponent.new
-            ac.component_id=outdated_comp.id
-            ac.alternative_id=wfc.id
-            ac.note="new versions are by default considered as equivalent"
-            ac2.component_id=wfc.id
-            ac2.alternative_id=outdated_comp.id
-            ac2.note="new versions are by default considered as equivalent"
-            ac.save
-            ac2.save
-          end
+#          if !outdated_comp.nil?
+#            ac=TavernaLite::AlternativeComponent.new
+#            ac2=TavernaLite::AlternativeComponent.new
+#            ac.component_id=outdated_comp.id
+#            ac.alternative_id=wfc.id
+#            ac.note="new versions are by default considered as equivalent"
+#            ac2.component_id=wfc.id
+#            ac2.alternative_id=outdated_comp.id
+#            ac2.note="new versions are by default considered as equivalent"
+#            ac.save
+#            ac2.save
+#          end
         workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(workflow)
         if workflow_profile.nil?
           workflow_profile = TavernaLite::WorkflowProfile.new()
@@ -367,7 +367,7 @@ class WorkflowsController < ApplicationController
         end
       end
       count_down -= 1
-      end while count_down>1
+      end while count_down>=1
     }
     redirect_to :back
   end

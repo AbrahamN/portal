@@ -312,32 +312,19 @@ class WorkflowsController < ApplicationController
 
       workflow = download_comp_wfs(params)
       if !workflow.nil?
-          # if outdated version of component exists
-          outdated_comp = TavernaLite::WorkflowComponent.all(:conditions=>
+        # if outdated version of component exists
+        outdated_comp = TavernaLite::WorkflowComponent.all(:conditions=>
             ['name = ? AND  family = ?', k, nw_family.name])[0]
-          #register the most recent version
-          # create workflow for each  component
-          wfc = TavernaLite::WorkflowComponent.new()
-          wfc.workflow_id=workflow.id
-          wfc.license_id=1
-          wfc.version= count_down
-          wfc.family=nw_family.name
-          wfc.name=k
-          wfc.registry=nw_family.registry
-          wfc.save
-          # if outdated version of component exists
-#          if !outdated_comp.nil?
-#            ac=TavernaLite::AlternativeComponent.new
-#            ac2=TavernaLite::AlternativeComponent.new
-#            ac.component_id=outdated_comp.id
-#            ac.alternative_id=wfc.id
-#            ac.note="new versions are by default considered as equivalent"
-#            ac2.component_id=wfc.id
-#            ac2.alternative_id=outdated_comp.id
-#            ac2.note="new versions are by default considered as equivalent"
-#            ac.save
-#            ac2.save
-#          end
+        #register the most recent version
+        # create workflow for each  component
+        wfc = TavernaLite::WorkflowComponent.new()
+        wfc.workflow_id=workflow.id
+        wfc.license_id=1
+        wfc.version= count_down
+        wfc.family=nw_family.name
+        wfc.name=k
+        wfc.registry=nw_family.registry
+        wfc.save
         workflow_profile = TavernaLite::WorkflowProfile.find_by_workflow_id(workflow)
         if workflow_profile.nil?
           workflow_profile = TavernaLite::WorkflowProfile.new()
